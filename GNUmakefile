@@ -34,7 +34,7 @@ create-release:
 	mkdir -p build/release
 	zip -j build/release/$(PLUGIN_NAME)_$(TAG)_linux_amd64.zip build/linux_amd64/$(PLUGIN_NAME)_v$(TAG)
 	zip -j build/release/$(PLUGIN_NAME)_$(TAG)_darwin_amd64.zip build/darwin_amd64/$(PLUGIN_NAME)_v$(TAG)
-	shasum -a 256 build/release/*.zip > build/release/$(PLUGIN_NAME)_$(TAG)_SHA256SUMS
+	cd build/release && shasum -a 256 *.zip > $(PLUGIN_NAME)_$(TAG)_SHA256SUMS
 	gpg --detach-sign build/release/$(PLUGIN_NAME)_$(TAG)_SHA256SUMS
 
 mod:
