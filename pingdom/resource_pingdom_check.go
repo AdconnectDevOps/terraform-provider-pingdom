@@ -349,11 +349,11 @@ func checkForResource(d *schema.ResourceData) (pingdom.Check, error) {
 	}
 
 	if v, ok := d.GetOk("verifycertificate"); ok {
-		checkParams.VerifyCertificate = v.(*bool)
+		*checkParams.VerifyCertificate = v.(bool)
 	}
 
 	if v, ok := d.GetOk("ssldowndaysbefore"); ok {
-		checkParams.SSLDownDaysBefore = v.(*int)
+		*checkParams.SSLDownDaysBefore = v.(int)
 	}
 
 	checkType := d.Get("type")
