@@ -1,6 +1,6 @@
 GOOS := $(shell go env GOOS)
 GOARCH := $(shell go env GOARCH)
-TAG := 1.1.3
+TAG := 1.1.4
 TF_PLUGIN_PATH := $(HOME)/.terraform.d/plugins/$(GOOS)_$(GOARCH)
 PLUGIN_NAME := terraform-provider-pingdom
 
