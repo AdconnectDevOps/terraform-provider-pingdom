@@ -221,8 +221,8 @@ type commonCheckParams struct {
 	ProbeFilters             string
 	StringToSend             string
 	StringToExpect           string
-	VerifyCertificate        *bool
-	SSLDownDaysBefore        *int
+	VerifyCertificate        bool
+	SSLDownDaysBefore        int
 }
 
 func sortString(input string, seperator string) string {
@@ -349,11 +349,11 @@ func checkForResource(d *schema.ResourceData) (pingdom.Check, error) {
 	}
 
 	if v, ok := d.GetOk("verifycertificate"); ok {
-		*checkParams.VerifyCertificate = v.(bool)
+		checkParams.VerifyCertificate = v.(bool)
 	}
 
 	if v, ok := d.GetOk("ssldowndaysbefore"); ok {
-		*checkParams.SSLDownDaysBefore = v.(int)
+		checkParams.SSLDownDaysBefore = v.(int)
 	}
 
 	checkType := d.Get("type")
@@ -382,8 +382,8 @@ func checkForResource(d *schema.ResourceData) (pingdom.Check, error) {
 			ProbeFilters:             checkParams.ProbeFilters,
 			UserIds:                  checkParams.UserIds,
 			TeamIds:                  checkParams.TeamIds,
-			VerifyCertificate:        checkParams.VerifyCertificate,
-			SSLDownDaysBefore:        checkParams.SSLDownDaysBefore,
+			VerifyCertificate:        &checkParams.VerifyCertificate,
+			SSLDownDaysBefore:        &checkParams.SSLDownDaysBefore,
 		}, nil
 	case "ping":
 		return &pingdom.PingCheck{
@@ -588,10 +588,10 @@ func resourcePingdomCheckRead(d *schema.ResourceData, meta interface{}) error {
 		if err := d.Set("postdata", ck.Type.HTTP.PostData); err != nil {
 			return err
 		}
-    if err := d.Set("verifycertificate", &ck.Type.HTTP.VerifyCertificate); err != nil {
+    if err := d.Set("verifycertificate", ck.Type.HTTP.VerifyCertificate); err != nil {
       return err
     }
-    if err := d.Set("ssldowndaysbefore", &ck.Type.HTTP.SSLDownDaysBefore); err != nil {
+    if err := d.Set("ssldowndaysbefore", ck.Type.HTTP.SSLDownDaysBefore); err != nil {
       return err
     }
 
