@@ -14,7 +14,7 @@ builds:
   flags:
     - -trimpath
   ldflags:
-    - '-s -w -X main.version={{.Version}} -X main.commit={{.Commit}}'
+    - '-s -w -X main.version=1.2.0 -X main.commit={{.Commit}}'
   goos:
     - freebsd
     - windows
@@ -28,12 +28,12 @@ builds:
   ignore:
     - goos: darwin
       goarch: '386'
-  binary: '{{ .ProjectName }}_v{{ .Version }}'
+  binary: '{{ .ProjectName }}_v1.2.0'
 archives:
 - format: zip
-  name_template: '{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}'
+  name_template: '{{ .ProjectName }}_1.2.0_{{ .Os }}_{{ .Arch }}'
 checksum:
-  name_template: '{{ .ProjectName }}_{{ .Version }}_SHA256SUMS'
+  name_template: '{{ .ProjectName }}_1.2.0_SHA256SUMS'
   algorithm: sha256
 signs:
   - artifacts: checksum

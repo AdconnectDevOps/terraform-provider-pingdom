@@ -1,6 +1,6 @@
 GOOS := $(shell go env GOOS)
 GOARCH := $(shell go env GOARCH)
-TAG := 1.1.9
+TAG := 1.2.0
 TF_PLUGIN_PATH := $(HOME)/.terraform.d/plugins/$(GOOS)_$(GOARCH)
 PLUGIN_NAME := terraform-provider-pingdom
 
@@ -24,16 +24,19 @@ clean:
 
 build-linux: mod
 	@mkdir -p build/linux_amd64
+	@mkdir -p build/darwin_arm64
 	@docker build -t build .
 	@docker run --detach --name build build
 	@docker cp build:/app/$(PLUGIN_NAME) ./build/linux_amd64/$(PLUGIN_NAME)_v$(TAG)
 	@docker rm -f build
+	@echo "Building darwin_arm64 locally..."
+	@GOOS=darwin GOARCH=arm64 go build -o build/darwin_arm64/$(PLUGIN_NAME)_v$(TAG)
 
 create-release:
 	rm -rf build/release
 	mkdir -p build/release
 	zip -j build/release/$(PLUGIN_NAME)_$(TAG)_linux_amd64.zip build/linux_amd64/$(PLUGIN_NAME)_v$(TAG)
-	zip -j build/release/$(PLUGIN_NAME)_$(TAG)_darwin_amd64.zip build/darwin_amd64/$(PLUGIN_NAME)_v$(TAG)
+	zip -j build/release/$(PLUGIN_NAME)_$(TAG)_darwin_arm64.zip build/darwin_arm64/$(PLUGIN_NAME)_v$(TAG)
 	cd build/release && shasum -a 256 *.zip > $(PLUGIN_NAME)_$(TAG)_SHA256SUMS
 	gpg --detach-sign build/release/$(PLUGIN_NAME)_$(TAG)_SHA256SUMS
 
