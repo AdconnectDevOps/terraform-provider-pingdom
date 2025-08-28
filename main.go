@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/plugin"
 	"github.com/AdconnectDevOps/terraform-provider-pingdom/pingdom"
+	"github.com/hashicorp/terraform-plugin-sdk/plugin"
 )
 
 func main() {
