@@ -13,7 +13,6 @@ type Config struct {
 }
 
 // Client returns a new client for accessing pingdom.
-//
 func (c *Config) Client() (*pingdom.Client, error) {
 
 	if v := os.Getenv("PINGDOM_API_TOKEN"); v != "" {

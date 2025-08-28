@@ -1,75 +1,218 @@
-# terraform-provider-pingdom #
+# Terraform Provider for Pingdom
 
-This project is a [terraform](http://www.terraform.io/) provider for [pingdom](https://www.pingdom.com/).
+[![GitHub release](https://img.shields.io/github/release/russellcardullo/terraform-provider-pingdom.svg)](https://github.com/russellcardullo/terraform-provider-pingdom/releases)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-This currently only supports working with basic HTTP and ping checks.
+This is a [Terraform](https://www.terraform.io/) provider for [Pingdom](https://www.pingdom.com/), allowing you to manage your Pingdom monitoring checks, teams, and contacts as code.
 
-This supports Pingdom API v3.1: [API reference docs](https://docs.pingdom.com/api/)
+## Features
 
-## Requirements ##
-* Terraform 0.12.x
-* Go 1.14 (to build the provider plugin)
+- **HTTP Checks**: Monitor HTTP/HTTPS endpoints with custom headers, authentication, and response validation
+- **Ping Checks**: Basic ICMP ping monitoring for network availability
+- **Team Management**: Create and manage teams for alert notifications
+- **Contact Management**: Configure SMS and email notifications with severity levels
+- **Integration Support**: Webhook integrations for custom alert handling
 
-## Usage ##
+## Requirements
 
-**Use provider**
+- **Terraform**: >= 1.0
+- **Go**: 1.22+ (for building from source)
+- **Pingdom API**: v3.1 access token
+
+## Installation
+
+### From Terraform Registry (Recommended)
+
 ```hcl
 terraform {
   required_providers {
     pingdom = {
-      source = "AdconnectDevOps/pingdom"
-      version = "~> 1"
+      source  = "AdconnectDevOps/pingdom"
+      version = "~> 1.0"
+    }
+  }
+}
+```
+
+### From Source
+
+```bash
+git clone https://github.com/russellcardullo/terraform-provider-pingdom.git
+cd terraform-provider-pingdom
+make build
+make install
+```
+
+## Quick Start
+
+### 1. Configure the Provider
+
+```hcl
+terraform {
+  required_providers {
+    pingdom = {
+      source  = "russellcardullo/pingdom"
+      version = "~> 1.0"
     }
   }
 }
 
-variable "pingdom_api_token" {}
+# Configure the Pingdom Provider
+provider "pingdom" {
+  api_token = var.pingdom_api_token
+}
+
+# Variables
+variable "pingdom_api_token" {
+  description = "Pingdom API token for authentication"
+  type        = string
+  sensitive   = true
+}
+```
+
+### 2. Set Your API Token
+
+```bash
+# Option 1: Environment variable
+export PINGDOM_API_TOKEN="your_api_token_here"
+
+# Option 2: Terraform variable file (terraform.tfvars)
+echo 'pingdom_api_token = "your_api_token_here"' > terraform.tfvars
+
+# Option 3: Command line
+terraform apply -var="pingdom_api_token=your_api_token_here"
+```
+```
+
+## Examples
+
+### Basic HTTP Check
+
+```hcl
+resource "pingdom_check" "website" {
+  type       = "http"
+  name       = "Website Homepage"
+  host       = "example.com"
+  resolution = 5
+  url        = "/"
+  encryption = true  # Use HTTPS
+}
+```
+
+### Advanced HTTP Check with Alerts
+
+```hcl
+resource "pingdom_check" "api_endpoint" {
+  type                        = "http"
+  name                        = "API Health Check"
+  host                        = "api.example.com"
+  resolution                  = 1
+  url                         = "/health"
+  encryption                  = true
+  port                        = 443
+  shouldcontain              = "healthy"
+  responsetime_threshold     = 5000  # 5 seconds
+  
+  # Alert configuration
+  sendnotificationwhendown   = 2     # Alert after 2 consecutive failures
+  notifyagainevery           = 5     # Re-notify every 5 minutes
+  notifywhenbackup           = true
+  
+  # Notification targets
+  userids = [
+    pingdom_contact.admin.id,
+    pingdom_contact.ops.id
+  ]
+  
+  teamids = [
+    pingdom_team.oncall.id
+  ]
+  
+  integrationids = [
+    12345678  # Webhook integration ID
+  ]
+  
+  # Custom headers
+  requestheaders = {
+    "User-Agent" = "Terraform-Pingdom-Provider"
+    "X-Custom"   = "value"
+  }
+  
+  # Tags for organization
+  tags = "production,api,health"
+}
+```
+
+### Ping Check
+
+```hcl
+resource "pingdom_check" "network" {
+  type       = "ping"
+  name       = "Network Availability"
+  host       = "192.168.1.1"
+  resolution = 1
+  
+  userids = [
+    pingdom_contact.network_admin.id
+  ]
+}
+```
+
+### TCP Port Check
+
+```hcl
+resource "pingdom_check" "database" {
+  type            = "tcp"
+  name            = "Database Connection"
+  host            = "db.example.com"
+  port            = 5432
+  resolution      = 5
+  stringtosend    = "PING"
+  stringtoexpect  = "PONG"
+}
+```
+
+## Terraform Registry
+
+This provider is available on the [Terraform Registry](https://registry.terraform.io/providers/AdconnectDevOps/pingdom) and can be installed automatically by Terraform.
+
+### Registry Usage
+
+```hcl
+terraform {
+  required_providers {
+    pingdom = {
+      source  = "russellcardullo/pingdom"
+      version = "~> 1.0"
+    }
+  }
+}
 
 provider "pingdom" {
-    api_token = "${var.pingdom_api_token}"
+  api_token = var.pingdom_api_token
 }
 ```
 
-**Basic Check**
-```hcl
-resource "pingdom_check" "example" {
-    type = "http"
-    name = "my http check"
-    host = "example.com"
-    resolution = 5
-}
+### Version Constraints
 
-resource "pingdom_check" "example_with_alert" {
-    type = "http"
-    name = "my http check"
-    host = "example.com"
-    resolution = 5
-    sendnotificationwhendown = 2 # alert after 5 mins, with resolution 5*(2-1)
-    integrationids = [
-      12345678,
-      23456789
-    ]
-    userids = [
-      24680,
-      13579
-    ]
-}
+- `~> 1.0` - Use any 1.x version (recommended for production)
+- `~> 1.1` - Use any 1.1.x version
+- `>= 1.0, < 2.0` - Use any 1.x version with explicit upper bound
 
-resource "pingdom_check" "ping_example" {
-    type = "ping"
-    name = "my ping check"
-    host = "example.com"
-    resolution = 1
-    userids = [
-      24680
-    ]
-}
-```
+### Apply Your Configuration
 
-Apply with:
-```sh
- terraform apply \
-    -var 'pingdom_api_token=YOUR_API_TOKEN'
+```bash
+# Initialize Terraform
+terraform init
+
+# Plan your changes
+terraform plan
+
+# Apply the configuration
+terraform apply
+
+# Or apply with variables
+terraform apply -var="pingdom_api_token=YOUR_API_TOKEN"
 ```
 
 **Using attributes from other resources**
@@ -155,39 +298,56 @@ resource "pingdom_contact" "second_contact" {
 }
 ```
 
-## Resources ##
+## Troubleshooting
 
-### Pingdom Check ###
+### Common Issues
 
-#### Common Attributes ####
+#### Authentication Errors
+```bash
+Error: Error creating Pingdom check: 401 Unauthorized
+```
+**Solution**: Verify your API token is correct and has the necessary permissions.
 
-The following common attributes for all check types can be set:
+#### Rate Limiting
+```bash
+Error: 429 Too Many Requests
+```
+**Solution**: Implement exponential backoff or reduce the frequency of API calls.
 
-  * **name** - (Required) The name of the check
+#### Invalid Check Configuration
+```bash
+Error: Invalid check type specified
+```
+**Solution**: Ensure check type is one of: `http`, `https`, `ping`, `tcp`.
 
-  * **host** - (Required) The hostname to check.  Should be in the format `example.com`.
+### Getting Help
 
-  * **resolution** - (Required) The time in minutes between each check.  Allowed values: (1,5,15,30,60).
+- **GitHub Issues**: [Report bugs or request features](https://github.com/russellcardullo/terraform-provider-pingdom/issues)
+- **Discussions**: [Community discussions](https://github.com/russellcardullo/terraform-provider-pingdom/discussions)
+- **Documentation**: [Pingdom API Reference](https://docs.pingdom.com/api/)
 
-  * **type** - (Required) The check type.  Allowed values: (http, ping).
+## Resource Reference
 
-  * **paused** - Whether the check is active or not (defaults to `false`, if not provided). Allowed values (bool): `true`, `false`
+### pingdom_check
 
-  * **responsetime_threshold** = How long (int: milliseconds) pingdom should wait before marking a probe as failed (defaults to 30000 ms)
+#### Common Attributes
 
-  * **sendnotificationwhendown** - The consecutive failed checks required to trigger an alert. Values of 1 imply notification instantly. Values of 2 mean pingdom will wait for a second check to fail, i.e. `resolution` minutes, to trigger an alert. For example `sendnotificationwhendown: 2` and `resolution: 1`, will trigger an alert after 1 minute. Further, values of N will trigger an alert after `(N - 1) * resolution` minutes, e.g. `sendnotificationwhendown: 6` and `resolution: 1` will trigger an alert after 5 minutes. Values of 0 are ignored. See note about interaction with `integrationids` below.
+| Attribute | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `name` | string | Yes | The name of the check |
+| `host` | string | Yes | The hostname to check (e.g., `example.com`) |
+| `resolution` | number | Yes | Check frequency in minutes (1, 5, 15, 30, 60) |
+| `type` | string | Yes | Check type (`http`, `https`, `ping`, `tcp`) |
+| `paused` | bool | No | Whether the check is active (default: `false`) |
+| `responsetime_threshold` | number | No | Response time threshold in milliseconds (default: 30000) |
+| `sendnotificationwhendown` | number | No | Consecutive failures before alert (default: 1) |
+| `notifyagainevery` | number | No | Re-notify interval in minutes (default: 0) |
+| `notifywhenbackup` | bool | No | Notify when service recovers (default: `false`) |
+| `integrationids` | list | No | List of webhook integration IDs |
+| `userids` | list | No | List of user IDs for notifications |
+| `teamids` | list | No | List of team IDs for notifications |
 
-  * **notifyagainevery** - Notify again after n results.  A value of 0 means no additional notifications will be sent.
-
-  * **notifywhenbackup** - Notify when back up.
-
-  * **integrationids** - List of integer integration IDs (defined by webhook URL) that will be triggered by the alerts. The ID can be extracted from the integrations page URL on the pingdom website. See note about interaction with `sendnotificationwhendown` below.
-
-  * **userids** - List of integer user IDs that will be notified when the check is down.
-
-  * **teamids** - List of integer team IDs that will be notified when the check is down.
-
-Note that when using `integrationids`, the `sendnotificationwhendown` value will be ignored when sending webhook notifications.  You may need to contact Pingdom support for more details.  See #52.
+> **Note**: When using `integrationids`, the `sendnotificationwhendown` value will be ignored when sending webhook notifications. You may need to contact Pingdom support for more details. See [#52](https://github.com/russellcardullo/terraform-provider-pingdom/issues/52).
 
 #### HTTP specific attributes ####
 
@@ -259,26 +419,127 @@ The following attributes are exported:
 
       * **severity**: Severity of this notification. One of HIGH|LOW
 
-## Develop The Provider ##
+## Documentation
 
-### Dependencies for building from source ###
+### API Reference
 
-If you need to build from source, you should have a working Go environment setup.  If not check out the Go [getting started](http://golang.org/doc/install) guide.
+This provider supports Pingdom API v3.1. For detailed API documentation, see the [Pingdom API Reference](https://docs.pingdom.com/api/).
 
-This project uses [Go Modules](https://github.com/golang/go/wiki/Modules) for dependency management.  To fetch all dependencies run `go get` inside this repository.
+### Resource Types
 
-### Build ###
+- **pingdom_check** - Monitor HTTP, HTTPS, ping, and TCP endpoints
+- **pingdom_team** - Manage teams for alert notifications
+- **pingdom_contact** - Configure SMS and email notification contacts
+- **pingdom_integration** - Set up webhook integrations
 
-```sh
+### Data Sources
+
+- **pingdom_contact** - Retrieve existing contact information
+- **pingdom_team** - Retrieve existing team information
+
+## Development
+
+### Prerequisites
+
+- **Go**: 1.22+ (see [Go installation guide](https://golang.org/doc/install))
+- **Make**: For build automation
+- **Git**: For version control
+
+### Building from Source
+
+```bash
+# Clone the repository
+git clone https://github.com/russellcardullo/terraform-provider-pingdom.git
+cd terraform-provider-pingdom
+
+# Install dependencies
+go mod download
+
+# Build the provider
 make build
-```
 
-The binary will then be available at `_build/terraform-provider-pingdom_VERSION`.
-
-### Install ###
-
-```sh
+# Install locally
 make install
 ```
 
-This will place the binary under `$HOME/.terraform.d/plugins/OS_ARCH/terraform-provider-pingdom_VERSION`.  After installing you will need to run `terraform init` in any project using the plugin.
+### Development Workflow
+
+```bash
+# Run tests
+go test ./...
+
+# Run tests with coverage
+go test -cover ./...
+
+# Check code formatting
+go fmt ./...
+
+# Run linter
+go vet ./...
+
+# Build and test
+make test
+make build
+```
+
+### Project Structure
+
+```
+terraform-provider-pingdom/
+├── pingdom/                 # Provider implementation
+│   ├── config.go           # Provider configuration
+│   ├── provider.go         # Provider schema and resources
+│   ├── resource_*.go       # Resource implementations
+│   └── data_source_*.go    # Data source implementations
+├── examples/                # Usage examples
+├── .github/                 # GitHub Actions workflows
+├── go.mod                   # Go module definition
+└── README.md               # This file
+```
+
+### Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Make your changes
+4. Add tests for new functionality
+5. Ensure all tests pass (`go test ./...`)
+6. Commit your changes (`git commit -m 'Add amazing feature'`)
+7. Push to the branch (`git push origin feature/amazing-feature`)
+8. Open a Pull Request
+
+### Testing
+
+```bash
+# Run all tests
+go test ./...
+
+# Run specific test
+go test ./pingdom -v
+
+# Run tests with race detection
+go test -race ./...
+```
+
+### Release Process
+
+1. Update version in `go.mod`
+2. Create and push a git tag
+3. GitHub Actions will automatically build and release
+4. Update Terraform Registry documentation
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Support
+
+- **Documentation**: [Terraform Registry](https://registry.terraform.io/providers/russellcardullo/pingdom)
+- **Issues**: [GitHub Issues](https://github.com/russellcardullo/terraform-provider-pingdom/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/russellcardullo/terraform-provider-pingdom/discussions)
+
+## Acknowledgments
+
+- [Pingdom](https://www.pingdom.com/) for providing the monitoring API
+- [HashiCorp](https://www.hashicorp.com/) for the Terraform framework
+- All contributors who have helped improve this provider

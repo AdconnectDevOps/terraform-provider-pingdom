@@ -588,12 +588,12 @@ func resourcePingdomCheckRead(d *schema.ResourceData, meta interface{}) error {
 		if err := d.Set("postdata", ck.Type.HTTP.PostData); err != nil {
 			return err
 		}
-    if err := d.Set("verifycertificate", ck.Type.HTTP.VerifyCertificate); err != nil {
-      return err
-    }
-    if err := d.Set("ssldowndaysbefore", ck.Type.HTTP.SSLDownDaysBefore); err != nil {
-      return err
-    }
+		if err := d.Set("verifycertificate", ck.Type.HTTP.VerifyCertificate); err != nil {
+			return err
+		}
+		if err := d.Set("ssldowndaysbefore", ck.Type.HTTP.SSLDownDaysBefore); err != nil {
+			return err
+		}
 
 		if v, ok := ck.Type.HTTP.RequestHeaders["User-Agent"]; ok {
 			if strings.HasPrefix(v, "Pingdom.com_bot_version_") {
