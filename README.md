@@ -17,8 +17,8 @@ This supports Pingdom API v3.1: [API reference docs](https://docs.pingdom.com/ap
 terraform {
   required_providers {
     pingdom = {
-      source = "mirelia/pingdom"
-      version = "1.1.9"
+      source = "AdconnectDevOps/pingdom"
+      version = "~> 1"
     }
   }
 }
