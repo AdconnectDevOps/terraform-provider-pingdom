@@ -1,7 +1,10 @@
 # Terraform Provider for Pingdom
 
-[![GitHub release](https://img.shields.io/github/release/russellcardullo/terraform-provider-pingdom.svg)](https://github.com/russellcardullo/terraform-provider-pingdom/releases)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Go Version](https://img.shields.io/badge/go-1.21+-blue.svg)](https://golang.org/dl/)
+[![Terraform Version](https://img.shields.io/badge/terraform-1.0+-purple.svg)](https://www.terraform.io/downloads.html)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Tests](https://img.shields.io/badge/tests-passing-brightgreen.svg)](https://github.com/AdconnectDevOps/terraform-provider-shodan/actions)
+[![Release](https://img.shields.io/github/v/release/AdconnectDevOps/terraform-provider-shodan)](https://github.com/AdconnectDevOps/terraform-provider-shodan/releases)
 
 This is a [Terraform](https://www.terraform.io/) provider for [Pingdom](https://www.pingdom.com/), allowing you to manage your Pingdom monitoring checks, teams, and contacts as code.
 
@@ -37,7 +40,7 @@ terraform {
 ### From Source
 
 ```bash
-git clone https://github.com/russellcardullo/terraform-provider-pingdom.git
+git clone https://github.com/AdconnectDevOps/terraform-provider-pingdom.git
 cd terraform-provider-pingdom
 make build
 make install
@@ -51,7 +54,7 @@ make install
 terraform {
   required_providers {
     pingdom = {
-      source  = "russellcardullo/pingdom"
+      source  = "AdconnectDevOps/pingdom"
       version = "~> 1.0"
     }
   }
@@ -182,7 +185,7 @@ This provider is available on the [Terraform Registry](https://registry.terrafor
 terraform {
   required_providers {
     pingdom = {
-      source  = "russellcardullo/pingdom"
+      source  = "AdconnectDevOps/pingdom"
       version = "~> 1.0"
     }
   }
@@ -322,8 +325,8 @@ Error: Invalid check type specified
 
 ### Getting Help
 
-- **GitHub Issues**: [Report bugs or request features](https://github.com/russellcardullo/terraform-provider-pingdom/issues)
-- **Discussions**: [Community discussions](https://github.com/russellcardullo/terraform-provider-pingdom/discussions)
+- **GitHub Issues**: [Report bugs or request features](https://github.com/AdconnectDevOps/terraform-provider-pingdom/issues)
+- **Discussions**: [Community discussions](https://github.com/AdconnectDevOps/terraform-provider-pingdom/discussions)
 - **Documentation**: [Pingdom API Reference](https://docs.pingdom.com/api/)
 
 ## Resource Reference
@@ -347,7 +350,7 @@ Error: Invalid check type specified
 | `userids` | list | No | List of user IDs for notifications |
 | `teamids` | list | No | List of team IDs for notifications |
 
-> **Note**: When using `integrationids`, the `sendnotificationwhendown` value will be ignored when sending webhook notifications. You may need to contact Pingdom support for more details. See [#52](https://github.com/russellcardullo/terraform-provider-pingdom/issues/52).
+> **Note**: When using `integrationids`, the `sendnotificationwhendown` value will be ignored when sending webhook notifications. You may need to contact Pingdom support for more details. See [#52](https://github.com/AdconnectDevOps/terraform-provider-pingdom/issues/52).
 
 #### HTTP specific attributes ####
 
@@ -449,7 +452,7 @@ This provider supports Pingdom API v3.1. For detailed API documentation, see the
 
 ```bash
 # Clone the repository
-git clone https://github.com/russellcardullo/terraform-provider-pingdom.git
+git clone https://github.com/AdconnectDevOps/terraform-provider-pingdom.git
 cd terraform-provider-pingdom
 
 # Install dependencies
@@ -534,9 +537,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Support
 
-- **Documentation**: [Terraform Registry](https://registry.terraform.io/providers/russellcardullo/pingdom)
-- **Issues**: [GitHub Issues](https://github.com/russellcardullo/terraform-provider-pingdom/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/russellcardullo/terraform-provider-pingdom/discussions)
+- **Documentation**: [Terraform Registry](https://registry.terraform.io/providers/AdconnectDevOps/pingdom)
+- **Issues**: [GitHub Issues](https://github.com/AdconnectDevOps/terraform-provider-pingdom/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/AdconnectDevOps/terraform-provider-pingdom/discussions)
 
 ## Acknowledgments
 

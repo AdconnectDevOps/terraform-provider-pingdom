@@ -137,6 +137,6 @@ Now that you have a basic check running, you can:
 If you encounter issues:
 
 1. Check the [Terraform Registry documentation](https://registry.terraform.io/providers/AdconnectDevOps/pingdom)
-2. Review the [GitHub repository](https://github.com/russellcardullo/terraform-provider-pingdom)
-3. Open an [issue](https://github.com/russellcardullo/terraform-provider-pingdom/issues) for bugs
-4. Start a [discussion](https://github.com/russellcardullo/terraform-provider-pingdom/discussions) for questions
+2. Review the [GitHub repository](https://github.com/AdconnectDevOps/terraform-provider-pingdom)
+3. Open an [issue](https://github.com/AdconnectDevOps/terraform-provider-pingdom/issues) for bugs
+4. Start a [discussion](https://github.com/AdconnectDevOps/terraform-provider-pingdom/discussions) for questions

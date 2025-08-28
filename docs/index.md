@@ -111,9 +111,9 @@ provider "pingdom" {
 
 ## Support
 
-- **Documentation**: [GitHub Repository](https://github.com/russellcardullo/terraform-provider-pingdom)
-- **Issues**: [GitHub Issues](https://github.com/russellcardullo/terraform-provider-pingdom/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/russellcardullo/terraform-provider-pingdom/discussions)
+- **Documentation**: [GitHub Repository](https://github.com/AdconnectDevOps/terraform-provider-pingdom)
+- **Issues**: [GitHub Issues](https://github.com/AdconnectDevOps/terraform-provider-pingdom/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/AdconnectDevOps/terraform-provider-pingdom/discussions)
 
 ## License
 
