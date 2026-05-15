@@ -4,16 +4,17 @@ Notes for contributors (and AI assistants) working on this provider.
 
 ## What this is
 
-A Terraform provider for the Pingdom API (uptime checks, contacts, teams). Built on `terraform-plugin-sdk v1` (legacy SDK, deprecated upstream — see "Modernization" below). Wraps `github.com/russellcardullo/go-pingdom` for transport. Published to the Terraform Registry as `AdconnectDevOps/pingdom`.
+A Terraform provider for the Pingdom API (uptime checks, contacts, teams). Built on `terraform-plugin-sdk/v2`. Wraps `github.com/russellcardullo/go-pingdom` for transport (note: upstream is archived — see "Known limitations"). Published to the Terraform Registry as `AdconnectDevOps/pingdom`.
 
 ## Layout
 
 ```
 .
-├── main.go                                # plugin.Serve entrypoint (SDK v1)
+├── main.go                                # plugin.Serve entrypoint (SDK v2)
 ├── pingdom/
-│   ├── provider.go                        # schema, ResourcesMap, ConfigureFunc
+│   ├── provider.go                        # schema, ResourcesMap, ConfigureContextFunc
 │   ├── config.go                          # API client wiring + token resolution
+│   ├── transport.go                       # rate-limited http.RoundTripper with 429 retry
 │   ├── resource_pingdom_check.go          # pingdom_check resource (http/ping/tcp)
 │   ├── resource_pingdom_contact.go        # pingdom_contact resource
 │   ├── resource_pingdom_team.go           # pingdom_team resource
@@ -48,14 +49,24 @@ Tags must be annotated (signed): `git tag -m "Release vX.Y.Z" vX.Y.Z` — a ligh
 
 ## Conventions used here
 
-### SDK v1 lifecycle (`Create`, `Read`, `Update`, `Delete`)
+### SDK v2 lifecycle (`CreateContext`, `ReadContext`, `UpdateContext`, `DeleteContext`)
 
-Resources implement the SDK v1 callbacks via `*schema.Resource`. Patterns:
+Resources implement the SDK v2 context-aware callbacks via `*schema.Resource`. Each callback takes `context.Context` + `*schema.ResourceData` + `meta interface{}` and returns `diag.Diagnostics`. Wrap plain `error` returns via `diag.FromErr(...)`. Patterns:
 
-- **`Create`** — build the API payload with `<resource>ForResource(d)`, call the go-pingdom client, `d.SetId(strconv.Itoa(result.ID))`, then delegate to `Read` to populate computed fields.
-- **`Read`** — `strconv.Atoi(d.Id())`, call the ID-scoped client method (`Checks.Read(id)`, `Teams.Read(id)`, `Contacts.Read(id)`). On `*pingdom.PingdomError` with `StatusCode == 404`, call `d.SetId("")` and return nil — Terraform will recreate on next plan.
-- **`Update`** — call the ID-scoped Update method, then delegate to `Read` (when populating computed fields back to state matters; check does, team/contact don't).
-- **`Delete`** — call the ID-scoped Delete method. The go-pingdom client treats 404 as an error; if you want idempotent deletes, surface the 404 the same way `Read` does.
+- **`CreateContext`** — build the API payload with `<resource>ForResource(d)`, call the go-pingdom client, `d.SetId(strconv.Itoa(result.ID))`, then `return resourcePingdomXRead(ctx, d, meta)` to populate computed fields.
+- **`ReadContext`** — `strconv.Atoi(d.Id())`, call the ID-scoped client method (`Checks.Read(id)`, `Teams.Read(id)`, `Contacts.Read(id)`). On `*pingdom.PingdomError` with `StatusCode == 404`, call `d.SetId("")` and `return nil` — Terraform will recreate on next plan.
+- **`UpdateContext`** — call the ID-scoped Update method, then delegate to Read (when populating computed fields back to state matters; check does, team/contact don't).
+- **`DeleteContext`** — call the ID-scoped Delete method. The go-pingdom client treats 404 as an error; if you want idempotent deletes, surface the 404 the same way Read does.
+
+### Importer uses context-aware passthrough
+
+```go
+Importer: &schema.ResourceImporter{
+    StateContext: schema.ImportStatePassthroughContext,
+},
+```
+
+`State: schema.ImportStatePassthrough` from SDK v1 is replaced by `StateContext` in v2.
 
 ### Always reflect actual state in `Read`
 
@@ -88,9 +99,8 @@ Pingdom's list endpoints return every resource of a type for the account. Callin
 
 ## Known limitations
 
-- **SDK v1 is deprecated.** HashiCorp does not patch it for new Terraform releases; long-term the provider should migrate to `terraform-plugin-sdk/v2` or the newer Plugin Framework. Migration is non-trivial — Read/Update/Delete signatures change to take `context.Context` and return `diag.Diagnostics`. Plan for a 1.3.0 release.
-- **No 429 retry.** Pingdom enforces rate limits per account. The go-pingdom client does not retry on 429. For workspaces with many resources, plan runs may hit `429 Too Many Requests` — currently mitigated by `-parallelism=1` in CI. Proper fix is a HTTP middleware around the go-pingdom transport (or PR upstream).
-- **No acceptance tests.** `main_test.go` is an empty `package main` stub. Adding even a minimal unit test for `checkForResource` / `contactForResource` payload building would catch a meaningful class of regressions.
+- **`russellcardullo/go-pingdom` upstream is archived** (Feb 2023, last release v1.3.0). No future bug fixes, no support for new Pingdom API endpoints. Next major release should replace the library with an internal REST client — see the existing `terraform-provider-shodan` repo for the pattern (REST client + types + CRUD methods in a single `pingdom/client.go`). Until then, anything in Pingdom's API that go-pingdom does not expose is unreachable from this provider.
+- **No acceptance tests.** `main_test.go` is an empty `package main` stub. Adding even a minimal unit test for `checkForResource` / `contactForResource` payload building would catch a meaningful class of regressions. Aim to add real tests before the v2.0.0 rewrite so behaviour is locked in.
 
 ## Adding a new resource
 

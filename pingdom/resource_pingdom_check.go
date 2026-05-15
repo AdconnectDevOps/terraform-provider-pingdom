@@ -1,24 +1,26 @@
 package pingdom
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"sort"
 	"strconv"
 	"strings"
 
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/russellcardullo/go-pingdom/pingdom"
 )
 
 func resourcePingdomCheck() *schema.Resource {
 	return &schema.Resource{
-		Create: resourcePingdomCheckCreate,
-		Read:   resourcePingdomCheckRead,
-		Update: resourcePingdomCheckUpdate,
-		Delete: resourcePingdomCheckDelete,
+		CreateContext: resourcePingdomCheckCreate,
+		ReadContext:   resourcePingdomCheckRead,
+		UpdateContext: resourcePingdomCheckUpdate,
+		DeleteContext: resourcePingdomCheckDelete,
 		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+			StateContext: schema.ImportStatePassthroughContext,
 		},
 
 		Schema: map[string]*schema.Schema{
@@ -424,32 +426,32 @@ func checkForResource(d *schema.ResourceData) (pingdom.Check, error) {
 	}
 }
 
-func resourcePingdomCheckCreate(d *schema.ResourceData, meta interface{}) error {
+func resourcePingdomCheckCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*pingdom.Client)
 
 	check, err := checkForResource(d)
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	log.Printf("[DEBUG] Check create configuration: %#v, %#v", d.Get("name"), d.Get("host"))
 
 	ck, err := client.Checks.Create(check)
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	d.SetId(strconv.Itoa(ck.ID))
 
-	return resourcePingdomCheckRead(d, meta)
+	return resourcePingdomCheckRead(ctx, d, meta)
 }
 
-func resourcePingdomCheckRead(d *schema.ResourceData, meta interface{}) error {
+func resourcePingdomCheckRead(_ context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*pingdom.Client)
 
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {
-		return fmt.Errorf("Error retrieving id for resource: %s", err)
+		return diag.FromErr(fmt.Errorf("Error retrieving id for resource: %s", err))
 	}
 	ck, err := client.Checks.Read(id)
 	if err != nil {
@@ -457,35 +459,35 @@ func resourcePingdomCheckRead(d *schema.ResourceData, meta interface{}) error {
 			d.SetId("")
 			return nil
 		}
-		return fmt.Errorf("Error retrieving check: %s", err)
+		return diag.FromErr(fmt.Errorf("Error retrieving check: %s", err))
 	}
 
 	if err := d.Set("host", ck.Hostname); err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	if err := d.Set("name", ck.Name); err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	if err := d.Set("resolution", ck.Resolution); err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	if err := d.Set("responsetime_threshold", ck.ResponseTimeThreshold); err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	if err := d.Set("sendnotificationwhendown", ck.SendNotificationWhenDown); err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	if err := d.Set("notifyagainevery", ck.NotifyAgainEvery); err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	if err := d.Set("notifywhenbackup", ck.NotifyWhenBackup); err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	tags := []string{}
@@ -497,12 +499,12 @@ func resourcePingdomCheckRead(d *schema.ResourceData, meta interface{}) error {
 	//number of occurances across all checks
 	sort.Strings(tags)
 	if err := d.Set("tags", strings.Join(tags, ",")); err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	// Always reflect actual state — conditional-set-on-true causes false→true drift loops.
 	if err := d.Set("paused", ck.Status == "paused"); err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	integids := schema.NewSet(
@@ -513,7 +515,7 @@ func resourcePingdomCheckRead(d *schema.ResourceData, meta interface{}) error {
 		integids.Add(integrationId)
 	}
 	if err := d.Set("integrationids", integids); err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	userids := schema.NewSet(
@@ -524,7 +526,7 @@ func resourcePingdomCheckRead(d *schema.ResourceData, meta interface{}) error {
 		userids.Add(userId)
 	}
 	if err := d.Set("userids", userids); err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	teamids := schema.NewSet(
@@ -535,49 +537,49 @@ func resourcePingdomCheckRead(d *schema.ResourceData, meta interface{}) error {
 		teamids.Add(userId)
 	}
 	if err := d.Set("teamids", teamids); err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	if probefilters := ck.ProbeFilters; len(probefilters) > 0 {
 		// normalise: "region: NA" -> "region:NA"
 		if err := d.Set("probefilters", strings.Replace(probefilters[0], ": ", ":", 1)); err != nil {
-			return err
+			return diag.FromErr(err)
 		}
 	}
 
 	if ck.Type.HTTP != nil {
 		if err := d.Set("type", "http"); err != nil {
-			return err
+			return diag.FromErr(err)
 		}
 		if err := d.Set("url", ck.Type.HTTP.Url); err != nil {
-			return err
+			return diag.FromErr(err)
 		}
 		if err := d.Set("encryption", ck.Type.HTTP.Encryption); err != nil {
-			return err
+			return diag.FromErr(err)
 		}
 		if err := d.Set("port", ck.Type.HTTP.Port); err != nil {
-			return err
+			return diag.FromErr(err)
 		}
 		if err := d.Set("username", ck.Type.HTTP.Username); err != nil {
-			return err
+			return diag.FromErr(err)
 		}
 		if err := d.Set("password", ck.Type.HTTP.Password); err != nil {
-			return err
+			return diag.FromErr(err)
 		}
 		if err := d.Set("shouldcontain", ck.Type.HTTP.ShouldContain); err != nil {
-			return err
+			return diag.FromErr(err)
 		}
 		if err := d.Set("shouldnotcontain", ck.Type.HTTP.ShouldNotContain); err != nil {
-			return err
+			return diag.FromErr(err)
 		}
 		if err := d.Set("postdata", ck.Type.HTTP.PostData); err != nil {
-			return err
+			return diag.FromErr(err)
 		}
 		if err := d.Set("verifycertificate", ck.Type.HTTP.VerifyCertificate); err != nil {
-			return err
+			return diag.FromErr(err)
 		}
 		if err := d.Set("ssldowndaysbefore", ck.Type.HTTP.SSLDownDaysBefore); err != nil {
-			return err
+			return diag.FromErr(err)
 		}
 
 		if v, ok := ck.Type.HTTP.RequestHeaders["User-Agent"]; ok {
@@ -586,66 +588,66 @@ func resourcePingdomCheckRead(d *schema.ResourceData, meta interface{}) error {
 			}
 		}
 		if err := d.Set("requestheaders", ck.Type.HTTP.RequestHeaders); err != nil {
-			return err
+			return diag.FromErr(err)
 		}
 	} else if ck.Type.TCP != nil {
 		if err := d.Set("type", "tcp"); err != nil {
-			return err
+			return diag.FromErr(err)
 		}
 		if err := d.Set("port", ck.Type.TCP.Port); err != nil {
-			return err
+			return diag.FromErr(err)
 		}
 		if err := d.Set("stringtosend", ck.Type.TCP.StringToSend); err != nil {
-			return err
+			return diag.FromErr(err)
 		}
 		if err := d.Set("stringtoexpect", ck.Type.TCP.StringToExpect); err != nil {
-			return err
+			return diag.FromErr(err)
 		}
 	} else {
 		if err := d.Set("type", "ping"); err != nil {
-			return err
+			return diag.FromErr(err)
 		}
 	}
 
 	return nil
 }
 
-func resourcePingdomCheckUpdate(d *schema.ResourceData, meta interface{}) error {
+func resourcePingdomCheckUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*pingdom.Client)
 
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {
-		return fmt.Errorf("Error retrieving id for resource: %s", err)
+		return diag.FromErr(fmt.Errorf("Error retrieving id for resource: %s", err))
 	}
 
 	check, err := checkForResource(d)
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	log.Printf("[DEBUG] Check update configuration: %#v, %#v", d.Get("name"), d.Get("host"))
 
 	_, err = client.Checks.Update(id, check)
 	if err != nil {
-		return fmt.Errorf("Error updating check: %s", err)
+		return diag.FromErr(fmt.Errorf("Error updating check: %s", err))
 	}
 
-	return resourcePingdomCheckRead(d, meta)
+	return resourcePingdomCheckRead(ctx, d, meta)
 }
 
-func resourcePingdomCheckDelete(d *schema.ResourceData, meta interface{}) error {
+func resourcePingdomCheckDelete(_ context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*pingdom.Client)
 
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {
-		return fmt.Errorf("Error retrieving id for resource: %s", err)
+		return diag.FromErr(fmt.Errorf("Error retrieving id for resource: %s", err))
 	}
 
 	log.Printf("[INFO] Deleting Check: %v", id)
 
 	_, err = client.Checks.Delete(id)
 	if err != nil {
-		return fmt.Errorf("Error deleting check: %s", err)
+		return diag.FromErr(fmt.Errorf("Error deleting check: %s", err))
 	}
 
 	return nil

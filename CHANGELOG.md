@@ -4,7 +4,26 @@ All notable changes to this provider are documented here.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this provider adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.2.4] — Unreleased
+## [1.3.0] — Unreleased
+
+### Changed
+
+- **Migrated from `terraform-plugin-sdk v1` to `v2`.** The `v1` SDK has been deprecated by HashiCorp for years and is missing from current `terraform validate` / acceptance-testing tooling. All resources and data sources now use the context-aware `CreateContext` / `ReadContext` / `UpdateContext` / `DeleteContext` lifecycle, return `diag.Diagnostics` instead of plain `error`, and pass a `context.Context` through that future cancellation/timeout logic can hook into. End-user HCL is unchanged — there is no schema-level breaking change.
+
+### Added
+
+- **Rate-limited HTTP transport with 429 retry.** The provider now wraps the go-pingdom `HTTPClient` with `pingdom.rateLimitedTransport`: every outbound API call is spaced at least 1 second apart, and a `429 Too Many Requests` response triggers exponential backoff (`1s, 2s, 4s`, up to 3 retries) before propagating. Large workspaces hitting Pingdom's burst protection are now handled inside the provider instead of failing the plan.
+- 60-second HTTP timeout on the underlying `http.Client` — prevents hung connections from deadlocking refresh.
+
+### Removed
+
+- `github.com/mitchellh/mapstructure` direct dependency. The provider only needed it to decode a single attribute (`api_token`); replaced with a direct `d.Get` call in `providerConfigure`.
+
+### Notes for future work
+
+- `github.com/russellcardullo/go-pingdom` upstream is **archived** (Feb 2023, no future maintenance). The next major release should replace it with an internal REST client to remove the dead-dep risk and to support Pingdom API features the library does not cover. Tracked as v2.0.0 work.
+
+## [1.2.4] — 2026-05-15
 
 ### Fixed
 
