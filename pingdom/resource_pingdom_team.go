@@ -76,27 +76,16 @@ func resourcePingdomTeamCreate(d *schema.ResourceData, meta interface{}) error {
 func resourcePingdomTeamRead(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*pingdom.Client)
 
-	teams, err := client.Teams.List()
-	if err != nil {
-		return fmt.Errorf("Error retrieving list of teams: %s", err)
-	}
-	exists := false
-	for _, team := range teams {
-		if strconv.Itoa(team.ID) == d.Id() {
-			exists = true
-			break
-		}
-	}
-	if !exists {
-		d.SetId("")
-		return nil
-	}
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {
 		return fmt.Errorf("Error retrieving id for resource: %s", err)
 	}
 	team, err := client.Teams.Read(id)
 	if err != nil {
+		if perr, ok := err.(*pingdom.PingdomError); ok && perr.StatusCode == 404 {
+			d.SetId("")
+			return nil
+		}
 		return fmt.Errorf("Error retrieving team: %s", err)
 	}
 

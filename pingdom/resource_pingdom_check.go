@@ -432,7 +432,7 @@ func resourcePingdomCheckCreate(d *schema.ResourceData, meta interface{}) error 
 		return err
 	}
 
-	log.Printf("[DEBUG] Check create configuration: %#v, %#v", d.Get("name"), d.Get("hostname"))
+	log.Printf("[DEBUG] Check create configuration: %#v, %#v", d.Get("name"), d.Get("host"))
 
 	ck, err := client.Checks.Create(check)
 	if err != nil {
@@ -451,23 +451,12 @@ func resourcePingdomCheckRead(d *schema.ResourceData, meta interface{}) error {
 	if err != nil {
 		return fmt.Errorf("Error retrieving id for resource: %s", err)
 	}
-	cl, err := client.Checks.List()
-	if err != nil {
-		return fmt.Errorf("Error retrieving list of checks: %s", err)
-	}
-	exists := false
-	for _, ckid := range cl {
-		if ckid.ID == id {
-			exists = true
-			break
-		}
-	}
-	if !exists {
-		d.SetId("")
-		return nil
-	}
 	ck, err := client.Checks.Read(id)
 	if err != nil {
+		if perr, ok := err.(*pingdom.PingdomError); ok && perr.StatusCode == 404 {
+			d.SetId("")
+			return nil
+		}
 		return fmt.Errorf("Error retrieving check: %s", err)
 	}
 
@@ -511,10 +500,9 @@ func resourcePingdomCheckRead(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	if ck.Status == "paused" {
-		if err := d.Set("paused", true); err != nil {
-			return err
-		}
+	// Always reflect actual state — conditional-set-on-true causes false→true drift loops.
+	if err := d.Set("paused", ck.Status == "paused"); err != nil {
+		return err
 	}
 
 	integids := schema.NewSet(
@@ -559,9 +547,6 @@ func resourcePingdomCheckRead(d *schema.ResourceData, meta interface{}) error {
 
 	if ck.Type.HTTP != nil {
 		if err := d.Set("type", "http"); err != nil {
-			return err
-		}
-		if err := d.Set("responsetime_threshold", ck.ResponseTimeThreshold); err != nil {
 			return err
 		}
 		if err := d.Set("url", ck.Type.HTTP.Url); err != nil {
@@ -638,7 +623,7 @@ func resourcePingdomCheckUpdate(d *schema.ResourceData, meta interface{}) error 
 		return err
 	}
 
-	log.Printf("[DEBUG] Check update configuration: %#v, %#v", d.Get("name"), d.Get("hostname"))
+	log.Printf("[DEBUG] Check update configuration: %#v, %#v", d.Get("name"), d.Get("host"))
 
 	_, err = client.Checks.Update(id, check)
 	if err != nil {

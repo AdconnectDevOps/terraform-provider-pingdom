@@ -208,6 +208,10 @@ func resourcePingdomContactRead(d *schema.ResourceData, meta interface{}) error 
 	}
 	contact, err := client.Contacts.Read(id)
 	if err != nil {
+		if perr, ok := err.(*pingdom.PingdomError); ok && perr.StatusCode == 404 {
+			d.SetId("")
+			return nil
+		}
 		return fmt.Errorf("Error retrieving contact: %s", err)
 	}
 
