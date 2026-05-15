@@ -2,8 +2,6 @@ package pingdom
 
 import (
 	"testing"
-
-	"github.com/russellcardullo/go-pingdom/pingdom"
 )
 
 func TestSortString(t *testing.T) {
@@ -41,9 +39,9 @@ func TestCheckForResource_HTTP(t *testing.T) {
 		t.Fatalf("checkForResource: %v", err)
 	}
 
-	http, ok := check.(*pingdom.HttpCheck)
+	http, ok := check.(*HttpCheck)
 	if !ok {
-		t.Fatalf("expected *pingdom.HttpCheck, got %T", check)
+		t.Fatalf("expected *HttpCheck, got %T", check)
 	}
 
 	if http.Name != "example-http" {
@@ -90,9 +88,9 @@ func TestCheckForResource_Ping(t *testing.T) {
 		t.Fatalf("checkForResource: %v", err)
 	}
 
-	p, ok := check.(*pingdom.PingCheck)
+	p, ok := check.(*PingCheck)
 	if !ok {
-		t.Fatalf("expected *pingdom.PingCheck, got %T", check)
+		t.Fatalf("expected *PingCheck, got %T", check)
 	}
 	if p.Name != "example-ping" {
 		t.Errorf("Name = %q, want %q", p.Name, "example-ping")
@@ -120,9 +118,9 @@ func TestCheckForResource_TCP(t *testing.T) {
 		t.Fatalf("checkForResource: %v", err)
 	}
 
-	tcp, ok := check.(*pingdom.TCPCheck)
+	tcp, ok := check.(*TCPCheck)
 	if !ok {
-		t.Fatalf("expected *pingdom.TCPCheck, got %T", check)
+		t.Fatalf("expected *TCPCheck, got %T", check)
 	}
 	if tcp.Port != 5432 {
 		t.Errorf("Port = %d, want 5432", tcp.Port)
@@ -164,7 +162,7 @@ func TestCheckForResource_HTTPHeaders(t *testing.T) {
 		t.Fatalf("checkForResource: %v", err)
 	}
 
-	http := check.(*pingdom.HttpCheck)
+	http := check.(*HttpCheck)
 	if http.RequestHeaders["X-Foo"] != "bar" {
 		t.Errorf("RequestHeaders[X-Foo] = %q, want bar", http.RequestHeaders["X-Foo"])
 	}
@@ -193,7 +191,7 @@ func TestCheckForResource_HTTPIntegrationAndTeams(t *testing.T) {
 	if err != nil {
 		t.Fatalf("checkForResource: %v", err)
 	}
-	http := check.(*pingdom.HttpCheck)
+	http := check.(*HttpCheck)
 
 	got := func(s []int) map[int]bool {
 		m := map[int]bool{}

@@ -4,7 +4,33 @@ All notable changes to this provider are documented here.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this provider adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.3.1] — Unreleased
+## [1.4.0] — Unreleased
+
+### Changed
+
+- **Replaced the archived `github.com/russellcardullo/go-pingdom` upstream library with an internal REST client (`pingdom/client.go`).** Upstream was archived in February 2023 and has not received updates since November 2020. The internal client now owns: HTTP transport (via the existing `rateLimitedTransport`), request encoding (form-encoded query params for `/checks` endpoints, JSON body for `/alerting/contacts` and `/alerting/teams`), response parsing including the `check.type` polymorphic shape (bare string for `"ping"`, single-key object for `{"http":{...}}`/`{"tcp":{...}}`), and the `*PingdomError` envelope returned for non-2xx responses. Public type names mirror the legacy library so end-user HCL is unaffected.
+- **`go.mod` direct dependencies dropped to one (`terraform-plugin-sdk/v2`).** Removes the unmaintained transitive surface that came with go-pingdom (`io/ioutil` callsites, deprecated `encoding/json` patterns, plus its own transitive deps).
+- **Module Go version bumped to `1.25.8`** to match the CI test runner's Go release.
+
+### Added
+
+- **httptest-based integration tests covering the wire protocol** (`pingdom/client_test.go`, 12 tests):
+  - `Checks.Read`: 200 OK happy path with team backfill, 404 surfaced as `*PingdomError`, HTTP type-detail decode, malformed-error-body fallback.
+  - `Checks.Create`: HTTP variant query-param serialisation including `integrationids`/`tags`/`verify_certificate`/`ssl_down_days_before`, empty-value stripping for Ping/TCP variants.
+  - `Contacts.Create`: JSON body shape + `Content-Type: application/json` header.
+  - `Teams`: full Create → Read → Update → Delete lifecycle against a mock server, asserting the exact method/path sequence.
+  - `HttpCheck`: header serialisation order (`requestheaderN` sorted by key), inline auth (`auth=user:pass`), validation rejections (`TCPCheck.Port < 1`, `HttpCheck.ShouldContain` + `ShouldNotContain` mutual-exclusion).
+- **Test coverage now spans 33 test functions across 5 files** — payload helpers, HTTP transport, and now the REST client itself. The schema-to-API contract and the API-to-Pingdom contract are both locked in golden form.
+
+### Removed
+
+- `github.com/russellcardullo/go-pingdom` (no longer in `go.mod` or `go.sum`).
+
+### Upgrade notes
+
+End-user HCL is unchanged. The provider's exposed schema (resource attributes, data sources, importer behaviour) is identical to 1.3.1. The internal types (`pingdom.HttpCheck`, `pingdom.Contact`, `pingdom.PingdomError`, etc.) keep their names but now resolve to the internal package — anyone vendoring this provider as a Go module dependency should re-run `go mod tidy` to drop the transitive go-pingdom.
+
+## [1.3.1] — 2026-05-15
 
 ### Added
 

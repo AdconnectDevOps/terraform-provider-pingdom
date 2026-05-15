@@ -8,7 +8,6 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/russellcardullo/go-pingdom/pingdom"
 )
 
 func resourcePingdomTeam() *schema.Resource {
@@ -36,8 +35,8 @@ func resourcePingdomTeam() *schema.Resource {
 	}
 }
 
-func teamForResource(d *schema.ResourceData) (*pingdom.Team, error) {
-	team := pingdom.Team{}
+func teamForResource(d *schema.ResourceData) (*Team, error) {
+	team := Team{}
 
 	// required
 	if v, ok := d.GetOk("name"); ok {
@@ -57,7 +56,7 @@ func teamForResource(d *schema.ResourceData) (*pingdom.Team, error) {
 }
 
 func resourcePingdomTeamCreate(_ context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*pingdom.Client)
+	client := meta.(*Client)
 
 	team, err := teamForResource(d)
 	if err != nil {
@@ -75,7 +74,7 @@ func resourcePingdomTeamCreate(_ context.Context, d *schema.ResourceData, meta i
 }
 
 func resourcePingdomTeamRead(_ context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*pingdom.Client)
+	client := meta.(*Client)
 
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {
@@ -83,7 +82,7 @@ func resourcePingdomTeamRead(_ context.Context, d *schema.ResourceData, meta int
 	}
 	team, err := client.Teams.Read(id)
 	if err != nil {
-		if perr, ok := err.(*pingdom.PingdomError); ok && perr.StatusCode == 404 {
+		if perr, ok := err.(*PingdomError); ok && perr.StatusCode == 404 {
 			d.SetId("")
 			return nil
 		}
@@ -109,7 +108,7 @@ func resourcePingdomTeamRead(_ context.Context, d *schema.ResourceData, meta int
 }
 
 func resourcePingdomTeamUpdate(_ context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*pingdom.Client)
+	client := meta.(*Client)
 
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {
@@ -130,7 +129,7 @@ func resourcePingdomTeamUpdate(_ context.Context, d *schema.ResourceData, meta i
 }
 
 func resourcePingdomTeamDelete(_ context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*pingdom.Client)
+	client := meta.(*Client)
 
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {

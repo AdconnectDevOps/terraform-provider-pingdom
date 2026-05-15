@@ -10,7 +10,6 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/russellcardullo/go-pingdom/pingdom"
 )
 
 func resourcePingdomCheck() *schema.Resource {
@@ -233,7 +232,7 @@ func sortString(input string, seperator string) string {
 	return strings.Join(list, seperator)
 }
 
-func checkForResource(d *schema.ResourceData) (pingdom.Check, error) {
+func checkForResource(d *schema.ResourceData) (Check, error) {
 	checkParams := commonCheckParams{}
 
 	// required
@@ -361,7 +360,7 @@ func checkForResource(d *schema.ResourceData) (pingdom.Check, error) {
 	checkType := d.Get("type")
 	switch checkType {
 	case "http":
-		return &pingdom.HttpCheck{
+		return &HttpCheck{
 			Name:                     checkParams.Name,
 			Hostname:                 checkParams.Hostname,
 			Resolution:               checkParams.Resolution,
@@ -388,7 +387,7 @@ func checkForResource(d *schema.ResourceData) (pingdom.Check, error) {
 			SSLDownDaysBefore:        &checkParams.SSLDownDaysBefore,
 		}, nil
 	case "ping":
-		return &pingdom.PingCheck{
+		return &PingCheck{
 			Name:                     checkParams.Name,
 			Hostname:                 checkParams.Hostname,
 			Resolution:               checkParams.Resolution,
@@ -404,7 +403,7 @@ func checkForResource(d *schema.ResourceData) (pingdom.Check, error) {
 			TeamIds:                  checkParams.TeamIds,
 		}, nil
 	case "tcp":
-		return &pingdom.TCPCheck{
+		return &TCPCheck{
 			Name:                     checkParams.Name,
 			Hostname:                 checkParams.Hostname,
 			Resolution:               checkParams.Resolution,
@@ -427,7 +426,7 @@ func checkForResource(d *schema.ResourceData) (pingdom.Check, error) {
 }
 
 func resourcePingdomCheckCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*pingdom.Client)
+	client := meta.(*Client)
 
 	check, err := checkForResource(d)
 	if err != nil {
@@ -447,7 +446,7 @@ func resourcePingdomCheckCreate(ctx context.Context, d *schema.ResourceData, met
 }
 
 func resourcePingdomCheckRead(_ context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*pingdom.Client)
+	client := meta.(*Client)
 
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {
@@ -455,7 +454,7 @@ func resourcePingdomCheckRead(_ context.Context, d *schema.ResourceData, meta in
 	}
 	ck, err := client.Checks.Read(id)
 	if err != nil {
-		if perr, ok := err.(*pingdom.PingdomError); ok && perr.StatusCode == 404 {
+		if perr, ok := err.(*PingdomError); ok && perr.StatusCode == 404 {
 			d.SetId("")
 			return nil
 		}
@@ -613,7 +612,7 @@ func resourcePingdomCheckRead(_ context.Context, d *schema.ResourceData, meta in
 }
 
 func resourcePingdomCheckUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*pingdom.Client)
+	client := meta.(*Client)
 
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {
@@ -636,7 +635,7 @@ func resourcePingdomCheckUpdate(ctx context.Context, d *schema.ResourceData, met
 }
 
 func resourcePingdomCheckDelete(_ context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*pingdom.Client)
+	client := meta.(*Client)
 
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {

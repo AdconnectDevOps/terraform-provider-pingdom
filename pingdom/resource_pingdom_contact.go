@@ -8,7 +8,6 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/russellcardullo/go-pingdom/pingdom"
 )
 
 func resourcePingdomContact() *schema.Resource {
@@ -76,8 +75,8 @@ func resourcePingdomContact() *schema.Resource {
 	}
 }
 
-func getNotificationMethods(d *schema.ResourceData) (pingdom.NotificationTargets, error) {
-	base := pingdom.NotificationTargets{}
+func getNotificationMethods(d *schema.ResourceData) (NotificationTargets, error) {
+	base := NotificationTargets{}
 
 	// You must have both a low and a high severity notification for a user to be valid
 	hasLowSeverity := false
@@ -85,7 +84,7 @@ func getNotificationMethods(d *schema.ResourceData) (pingdom.NotificationTargets
 
 	for _, raw := range d.Get("sms_notification").(*schema.Set).List() {
 		input := raw.(map[string]interface{})
-		sms := pingdom.SMSNotification{
+		sms := SMSNotification{
 			CountryCode: input["country_code"].(string),
 			Number:      input["number"].(string),
 			Provider:    input["provider"].(string),
@@ -108,7 +107,7 @@ func getNotificationMethods(d *schema.ResourceData) (pingdom.NotificationTargets
 
 	for _, raw := range d.Get("email_notification").(*schema.Set).List() {
 		input := raw.(map[string]interface{})
-		email := pingdom.EmailNotification{
+		email := EmailNotification{
 			Address:  input["address"].(string),
 			Severity: input["severity"].(string),
 		}
@@ -128,8 +127,8 @@ func getNotificationMethods(d *schema.ResourceData) (pingdom.NotificationTargets
 	return base, nil
 }
 
-func contactForResource(d *schema.ResourceData) (*pingdom.Contact, error) {
-	contact := pingdom.Contact{}
+func contactForResource(d *schema.ResourceData) (*Contact, error) {
+	contact := Contact{}
 
 	// required
 	if v, ok := d.GetOk("name"); ok {
@@ -152,7 +151,7 @@ func contactForResource(d *schema.ResourceData) (*pingdom.Contact, error) {
 // updateResourceFromContactResponse returns plain error; callers wrap with
 // diag.FromErr at the call site so the helper stays usable from both the
 // resource and the data source.
-func updateResourceFromContactResponse(d *schema.ResourceData, c *pingdom.Contact) error {
+func updateResourceFromContactResponse(d *schema.ResourceData, c *Contact) error {
 	smsTargets := []map[string]string{}
 	for _, raw := range c.NotificationTargets.SMS {
 		sms := map[string]string{
@@ -187,7 +186,7 @@ func updateResourceFromContactResponse(d *schema.ResourceData, c *pingdom.Contac
 }
 
 func resourcePingdomContactCreate(_ context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*pingdom.Client)
+	client := meta.(*Client)
 
 	contact, err := contactForResource(d)
 	if err != nil {
@@ -205,7 +204,7 @@ func resourcePingdomContactCreate(_ context.Context, d *schema.ResourceData, met
 }
 
 func resourcePingdomContactRead(_ context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*pingdom.Client)
+	client := meta.(*Client)
 
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {
@@ -213,7 +212,7 @@ func resourcePingdomContactRead(_ context.Context, d *schema.ResourceData, meta 
 	}
 	contact, err := client.Contacts.Read(id)
 	if err != nil {
-		if perr, ok := err.(*pingdom.PingdomError); ok && perr.StatusCode == 404 {
+		if perr, ok := err.(*PingdomError); ok && perr.StatusCode == 404 {
 			d.SetId("")
 			return nil
 		}
@@ -231,7 +230,7 @@ func resourcePingdomContactRead(_ context.Context, d *schema.ResourceData, meta 
 }
 
 func resourcePingdomContactUpdate(_ context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*pingdom.Client)
+	client := meta.(*Client)
 
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {
@@ -252,7 +251,7 @@ func resourcePingdomContactUpdate(_ context.Context, d *schema.ResourceData, met
 }
 
 func resourcePingdomContactDelete(_ context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*pingdom.Client)
+	client := meta.(*Client)
 
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {

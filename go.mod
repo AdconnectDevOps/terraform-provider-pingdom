@@ -2,10 +2,7 @@ module github.com/AdconnectDevOps/terraform-provider-pingdom
 
 go 1.25.8
 
-require (
-	github.com/hashicorp/terraform-plugin-sdk/v2 v2.40.1
-	github.com/russellcardullo/go-pingdom v1.3.0
-)
+require github.com/hashicorp/terraform-plugin-sdk/v2 v2.40.1
 
 require (
 	github.com/agext/levenshtein v1.2.2 // indirect

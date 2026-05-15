@@ -6,8 +6,6 @@ import (
 	"net/http"
 	"os"
 	"time"
-
-	"github.com/russellcardullo/go-pingdom/pingdom"
 )
 
 // Config respresents the client configuration
@@ -19,7 +17,7 @@ type Config struct {
 // takes precedence over the PINGDOM_API_TOKEN environment variable; the env
 // var is a fallback for the unset case. Transport is rate-limited (1 req/sec)
 // and retries HTTP 429 responses with exponential backoff.
-func (c *Config) Client() (*pingdom.Client, error) {
+func (c *Config) Client() (*Client, error) {
 	if c.APIToken == "" {
 		c.APIToken = os.Getenv("PINGDOM_API_TOKEN")
 	}
@@ -32,7 +30,7 @@ func (c *Config) Client() (*pingdom.Client, error) {
 		Timeout:   60 * time.Second,
 	}
 
-	client, err := pingdom.NewClientWithConfig(pingdom.ClientConfig{
+	client, err := NewClientWithConfig(ClientConfig{
 		APIToken:   c.APIToken,
 		HTTPClient: httpClient,
 	})

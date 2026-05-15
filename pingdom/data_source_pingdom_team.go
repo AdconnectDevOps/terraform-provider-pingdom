@@ -7,7 +7,6 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/russellcardullo/go-pingdom/pingdom"
 )
 
 func dataSourcePingdomTeam() *schema.Resource {
@@ -31,13 +30,13 @@ func dataSourcePingdomTeam() *schema.Resource {
 }
 
 func dataSourcePingdomTeamRead(_ context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*pingdom.Client)
+	client := meta.(*Client)
 	name := d.Get("name").(string)
 	teams, err := client.Teams.List()
 	if err != nil {
 		return diag.FromErr(fmt.Errorf("Error retrieving team: %s", err))
 	}
-	var found *pingdom.TeamResponse
+	var found *TeamResponse
 	for _, team := range teams {
 		if team.Name == name {
 			log.Printf("Team: %v", team)
