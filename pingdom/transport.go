@@ -28,10 +28,11 @@ type rateLimitedTransport struct {
 }
 
 // newRateLimitedTransport returns a transport that spaces requests at least
-// minInterval apart and retries 429 up to maxRetries times.
+// minInterval apart and retries 429 up to maxRetries times. minInterval values
+// below 1ms are clamped to 1ms; pass 0 to effectively disable spacing.
 func newRateLimitedTransport(minInterval time.Duration, maxRetries int) *rateLimitedTransport {
-	if minInterval < time.Second {
-		minInterval = time.Second
+	if minInterval < time.Millisecond {
+		minInterval = time.Millisecond
 	}
 	if maxRetries < 0 {
 		maxRetries = 0

@@ -126,7 +126,7 @@ func TestRateLimitedTransport_ReplaysBodyOnRetry(t *testing.T) {
 
 func TestRateLimitedTransport_ClampsMinInterval(t *testing.T) {
 	tr := newRateLimitedTransport(0, 0)
-	if tr.minInterval < time.Second {
-		t.Errorf("minInterval = %v, expected clamp to ≥1s", tr.minInterval)
+	if tr.minInterval < time.Millisecond {
+		t.Errorf("minInterval = %v, expected clamp to ≥1ms", tr.minInterval)
 	}
 }

@@ -4,7 +4,14 @@ All notable changes to this provider are documented here.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this provider adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.4.0] — Unreleased
+## [1.4.1] — Unreleased
+
+### Changed
+
+- **Lowered the rate-limited HTTP transport's minimum interval from 1s to 100ms.** The 1s spacing introduced in 1.3.0 was defensive against Shodan-style 1 req/sec limits, but Pingdom paid plans allow significantly higher throughput. With 50+ checks in a workspace the 1s floor added ~50 seconds per refresh; 100ms still smooths bursts while letting plan/apply complete promptly. 429 retry with exponential backoff remains in place as the actual safety net.
+- `newRateLimitedTransport` minimum-interval clamp relaxed from 1s to 1ms; passing 0 now effectively disables spacing (still gated by the 1ms floor).
+
+## [1.4.0] — 2026-05-15
 
 ### Changed
 

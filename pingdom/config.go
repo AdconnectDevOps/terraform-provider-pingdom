@@ -26,7 +26,7 @@ func (c *Config) Client() (*Client, error) {
 	}
 
 	httpClient := &http.Client{
-		Transport: newRateLimitedTransport(time.Second, 3),
+		Transport: newRateLimitedTransport(100*time.Millisecond, 3),
 		Timeout:   60 * time.Second,
 	}
 
