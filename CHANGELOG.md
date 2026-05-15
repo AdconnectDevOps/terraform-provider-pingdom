@@ -4,7 +4,13 @@ All notable changes to this provider are documented here.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this provider adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.3.0] — Unreleased
+## [1.3.1] — Unreleased
+
+### Added
+
+- **Unit tests for payload construction and HTTP transport.** Covers `checkForResource` (http/ping/tcp variants + integration/team/user IDs + request headers + unknown-type error path), `contactForResource` + `getNotificationMethods` (severity validation, provider allow-list, paused passthrough), `teamForResource` (members + empty case), `sortString`, and `rateLimitedTransport` (request spacing, 429 retry, max-retry give-up, request-body replay across retries, min-interval clamp). 20 tests total, none require live API access — golden behaviour now locks the schema-to-API mapping before any future internal-client refactor.
+
+## [1.3.0] — 2026-05-15
 
 ### Changed
 
