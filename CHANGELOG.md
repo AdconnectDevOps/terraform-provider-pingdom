@@ -4,7 +4,26 @@ All notable changes to this provider are documented here.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this provider adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.4.1] — Unreleased
+## [1.4.2] — 2026-09-04
+
+### Fixed
+
+- **Removing `username`/`password` from an `http` check now actually clears the stored credentials.** The `auth` parameter was only added to the update request when a username was set, so a configuration that dropped the credentials sent no `auth` at all; the API kept the ones the check already carried and every subsequent plan proposed the same removal again — an apply that reported success and changed nothing. The request now carries an empty `auth` when, and only when, the credentials are being removed, so checks that never had authentication keep their existing request shape.
+- **`Read` no longer writes the API's `[MASKED]` placeholder into state.** The API returns that literal string in place of a stored password. Persisting it made state disagree with the configuration after every refresh, which is a second route to a permanent diff on any check whose password is managed in Terraform. State now keeps its existing value unless the API returns a real one (including the empty string that follows a successful removal).
+
+### Changed
+
+- **`password` on `pingdom_check` is marked `Sensitive`.** It was printed in clear text by `terraform plan`, `terraform show` and `terraform state show` whenever the value reached state from a refresh rather than from a `sensitive` variable. Note this changes how the value is *displayed* — Terraform state is not encrypted at rest, so protecting the state file itself remains the operator's responsibility.
+
+### Added
+
+- Five tests covering the credential-clearing paths: `auth` absent from an update that changes nothing, present-and-empty when clearing, still populated when credentials are set, stripped from create (the API rejects empty values there), and the resource layer not requesting a clear when credentials are present or were never set. Suite is now 37 test functions.
+
+### Upgrade notes
+
+End-user HCL is unchanged. A check whose credentials were removed from the configuration but never cleared server-side will show one final diff and converge on the next apply. Reviewer: Yevhenii.
+
+## [1.4.1] — 2026-05-15
 
 ### Changed
 

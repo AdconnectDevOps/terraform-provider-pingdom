@@ -133,6 +133,38 @@ func TestCheckForResource_TCP(t *testing.T) {
 	}
 }
 
+func TestCheckForResource_HTTPClearAuthNotSetSpuriously(t *testing.T) {
+	cases := map[string]string{
+		"credentials present": "someone",
+		"no credentials":      "",
+	}
+	for name, username := range cases {
+		t.Run(name, func(t *testing.T) {
+			d := resourcePingdomCheck().TestResourceData()
+			d.Set("type", "http")
+			d.Set("name", "example-http")
+			d.Set("host", "example.com")
+			d.Set("resolution", 5)
+			if username != "" {
+				d.Set("username", username)
+				d.Set("password", "secret")
+			}
+
+			check, err := checkForResource(d)
+			if err != nil {
+				t.Fatalf("checkForResource: %v", err)
+			}
+			http, ok := check.(*HttpCheck)
+			if !ok {
+				t.Fatalf("expected *HttpCheck, got %T", check)
+			}
+			if http.ClearAuth {
+				t.Error("ClearAuth must only be set when credentials are being removed")
+			}
+		})
+	}
+}
+
 func TestCheckForResource_UnknownType(t *testing.T) {
 	d := resourcePingdomCheck().TestResourceData()
 	d.Set("type", "bogus")

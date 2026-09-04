@@ -137,8 +137,8 @@ resource "pingdom_check" "critical_service" {
 *   `url` (String) - Target path on server (default: `/`).
 *   `encryption` (Boolean) - Enable HTTPS encryption (default: `false`).
 *   `port` (Number) - Target port for HTTP/HTTPS checks (default: 80/443).
-*   `username` (String) - Username for HTTP authentication.
-*   `password` (String) - Password for HTTP authentication.
+*   `username` (String) - Username for HTTP authentication. Remove both this and `password` to clear the credentials on an existing check.
+*   `password` (String) - Password for HTTP authentication. Marked sensitive, so it is redacted from plan output; the API never returns the stored value.
 *   `shouldcontain` (String) - String that must be present in response.
 *   `shouldnotcontain` (String) - String that must NOT be present in response.
 *   `postdata` (String) - POST data for form submissions.

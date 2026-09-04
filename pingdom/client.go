@@ -205,6 +205,14 @@ type HttpCheck struct {
 	TeamIds                  []int
 	VerifyCertificate        *bool
 	SSLDownDaysBefore        *int
+
+	// ClearAuth asks putParams to send an empty auth= on update. Pingdom keeps
+	// whatever basic auth a check already has unless the key is present in the
+	// request, so dropping username/password from a configuration cannot take
+	// effect without it. Only set when the credentials are actually being
+	// removed - sending auth= on every update would change the request shape
+	// for checks that never had auth.
+	ClearAuth bool
 }
 
 // PingCheck represents an ICMP ping-type check payload.
@@ -392,6 +400,8 @@ func (ck *HttpCheck) putParams() map[string]string {
 	}
 	if ck.Username != "" {
 		m["auth"] = fmt.Sprintf("%s:%s", ck.Username, ck.Password)
+	} else if ck.ClearAuth {
+		m["auth"] = ""
 	}
 	// Pingdom expects headers as requestheader0=key:value, requestheader1=...
 	keys := make([]string, 0, len(ck.RequestHeaders))

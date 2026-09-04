@@ -12,6 +12,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
+// maskedPassword is what the API returns in place of a stored basic-auth
+// password. It is a placeholder, never a usable credential.
+const maskedPassword = "[MASKED]"
+
 func resourcePingdomCheck() *schema.Resource {
 	return &schema.Resource{
 		CreateContext: resourcePingdomCheckCreate,
@@ -114,9 +118,10 @@ func resourcePingdomCheck() *schema.Resource {
 			},
 
 			"password": {
-				Type:     schema.TypeString,
-				Optional: true,
-				ForceNew: false,
+				Type:      schema.TypeString,
+				Optional:  true,
+				ForceNew:  false,
+				Sensitive: true,
 			},
 
 			"shouldcontain": {
@@ -214,6 +219,7 @@ type commonCheckParams struct {
 	Port                     int
 	Username                 string
 	Password                 string
+	ClearAuth                bool
 	ShouldContain            string
 	ShouldNotContain         string
 	PostData                 string
@@ -314,6 +320,13 @@ func checkForResource(d *schema.ResourceData) (Check, error) {
 		checkParams.Password = v.(string)
 	}
 
+	// A configuration that drops username/password has to say so explicitly,
+	// or Pingdom keeps the credentials the check already carries and every
+	// subsequent plan proposes the same removal again.
+	if old, new := d.GetChange("username"); old.(string) != "" && new.(string) == "" {
+		checkParams.ClearAuth = true
+	}
+
 	if v, ok := d.GetOk("shouldcontain"); ok {
 		checkParams.ShouldContain = v.(string)
 	}
@@ -375,6 +388,7 @@ func checkForResource(d *schema.ResourceData) (Check, error) {
 			Port:                     checkParams.Port,
 			Username:                 checkParams.Username,
 			Password:                 checkParams.Password,
+			ClearAuth:                checkParams.ClearAuth,
 			ShouldContain:            checkParams.ShouldContain,
 			ShouldNotContain:         checkParams.ShouldNotContain,
 			PostData:                 checkParams.PostData,
@@ -562,8 +576,15 @@ func resourcePingdomCheckRead(_ context.Context, d *schema.ResourceData, meta in
 		if err := d.Set("username", ck.Type.HTTP.Username); err != nil {
 			return diag.FromErr(err)
 		}
-		if err := d.Set("password", ck.Type.HTTP.Password); err != nil {
-			return diag.FromErr(err)
+		// Pingdom returns the literal "[MASKED]" instead of the stored password.
+		// Writing that into state would make the value differ from the
+		// configuration on every refresh, so keep what state already holds and
+		// only accept a real value (including the empty string that follows a
+		// successful removal).
+		if ck.Type.HTTP.Password != maskedPassword {
+			if err := d.Set("password", ck.Type.HTTP.Password); err != nil {
+				return diag.FromErr(err)
+			}
 		}
 		if err := d.Set("shouldcontain", ck.Type.HTTP.ShouldContain); err != nil {
 			return diag.FromErr(err)

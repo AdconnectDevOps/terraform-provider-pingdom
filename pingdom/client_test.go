@@ -329,6 +329,72 @@ func TestClient_HTTPCheck_AuthInline(t *testing.T) {
 	}
 }
 
+func TestClient_HTTPCheck_AuthOmittedWhenUnset(t *testing.T) {
+	verify := true
+	ck := &HttpCheck{
+		Name:              "h",
+		Hostname:          "h.example.com",
+		Resolution:        1,
+		Url:               "/",
+		VerifyCertificate: &verify,
+	}
+	if _, present := ck.putParams()["auth"]; present {
+		t.Error("auth must be absent from an update that is not changing credentials")
+	}
+}
+
+func TestClient_HTTPCheck_ClearAuthSendsEmptyAuth(t *testing.T) {
+	verify := true
+	ck := &HttpCheck{
+		Name:              "h",
+		Hostname:          "h.example.com",
+		Resolution:        1,
+		Url:               "/",
+		ClearAuth:         true,
+		VerifyCertificate: &verify,
+	}
+	p := ck.putParams()
+	v, present := p["auth"]
+	if !present {
+		t.Fatal("auth must be present so the server clears the stored credentials")
+	}
+	if v != "" {
+		t.Errorf("auth = %q, want empty", v)
+	}
+}
+
+func TestClient_HTTPCheck_ClearAuthIgnoredWhenCredentialsSet(t *testing.T) {
+	verify := true
+	ck := &HttpCheck{
+		Name:              "h",
+		Hostname:          "h.example.com",
+		Resolution:        1,
+		Url:               "/",
+		Username:          "alice",
+		Password:          "s3cret",
+		ClearAuth:         true,
+		VerifyCertificate: &verify,
+	}
+	if got := ck.putParams()["auth"]; got != "alice:s3cret" {
+		t.Errorf("auth = %q, want alice:s3cret", got)
+	}
+}
+
+func TestClient_HTTPCheck_ClearAuthStrippedOnCreate(t *testing.T) {
+	verify := true
+	ck := &HttpCheck{
+		Name:              "h",
+		Hostname:          "h.example.com",
+		Resolution:        1,
+		Url:               "/",
+		ClearAuth:         true,
+		VerifyCertificate: &verify,
+	}
+	if _, present := ck.postParams()["auth"]; present {
+		t.Error("create must not carry an empty auth - Pingdom rejects empty values at create time")
+	}
+}
+
 func TestClient_TCPCheck_PortRequired(t *testing.T) {
 	ck := &TCPCheck{Name: "x", Hostname: "y", Resolution: 5, Port: 0}
 	if err := ck.valid(); err == nil {
